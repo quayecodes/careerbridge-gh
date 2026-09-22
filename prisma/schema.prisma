@@ -1,0 +1,165 @@
+// Prisma Schema for CareerBridge Ghana (SQLite & PostgreSQL Compatible)
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         String    @default("STUDENT") // "STUDENT" | "EMPLOYER" | "ADMIN"
+  avatarUrl    String?
+  isVerified   Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  studentProfile  StudentProfile?
+  employerProfile EmployerProfile?
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+
+  @@index([email])
+}
+
+model StudentProfile {
+  id             String        @id @default(cuid())
+  userId         String        @unique
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  university     String
+  programOfStudy String
+  level          String        @default("LEVEL_300") // "LEVEL_100" | "LEVEL_200" | "LEVEL_300" | "LEVEL_400" | "GRADUATE" | "POSTGRADUATE"
+  graduationYear Int
+  skills         String        // JSON stringified array of skills for SQLite compatibility
+  resumeUrl      String?
+  bio            String?
+  phone          String?
+  locationRegion String?
+  linkedInUrl    String?
+  githubUrl      String?
+  portfolioUrl   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  applications Application[]
+  savedJobs    SavedJob[]
+}
+
+model EmployerProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName        String
+  companyLogoUrl     String?
+  industry           String
+  companySize        String?
+  website            String?
+  description        String
+  locationRegion     String
+  address            String?
+  phone              String?
+  businessRegNumber  String?
+  verificationStatus String   @default("PENDING") // "PENDING" | "VERIFIED" | "REJECTED"
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  jobListings JobListing[]
+
+  @@index([companyName])
+  @@index([verificationStatus])
+}
+
+model JobListing {
+  id                  String   @id @default(cuid())
+  employerId          String
+  employer            EmployerProfile @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  title               String
+  slug                String   @unique
+  description         String
+  requirements        String
+  responsibilities    String
+  opportunityType     String   @default("INTERNSHIP") // "INTERNSHIP" | "NSS_PLACEMENT" | "GRADUATE_TRAINEE" | "ENTRY_LEVEL" | "SCHOLARSHIP"
+  workplaceType       String   @default("ON_SITE")    // "ON_SITE" | "HYBRID" | "REMOTE"
+  locationRegion      String   // e.g. Greater Accra, Ashanti, Western, Central, etc.
+  industry            String
+  stipendMin          Int?
+  stipendMax          Int?
+  currency            String   @default("GHS")
+  applicationDeadline DateTime
+  status              String   @default("ACTIVE")     // "DRAFT" | "PENDING_APPROVAL" | "ACTIVE" | "CLOSED" | "ARCHIVED"
+  isFeatured          Boolean  @default(false)
+  viewsCount          Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  applications Application[]
+  savedJobs    SavedJob[]
+
+  @@index([status, applicationDeadline])
+  @@index([locationRegion, opportunityType])
+  @@index([employerId])
+}
+
+model Application {
+  id               String   @id @default(cuid())
+  jobListingId     String
+  jobListing       JobListing     @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  coverLetter      String?
+  resumeUrl        String?
+  status           String   @default("APPLIED") // "APPLIED" | "UNDER_REVIEW" | "SHORTLISTED" | "INTERVIEW_SCHEDULED" | "ACCEPTED" | "REJECTED" | "WITHDRAWN"
+  employerNotes    String?
+  appliedAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([studentProfileId, jobListingId])
+  @@index([jobListingId, status])
+  @@index([studentProfileId])
+}
+
+model SavedJob {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  jobListingId     String
+  jobListing       JobListing     @relation(fields: [jobListingId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([studentProfileId, jobListingId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("APPLICATION_STATUS") // "APPLICATION_STATUS" | "NEW_OPPORTUNITY" | "SYSTEM_ALERT"
+  isRead    Boolean  @default(false)
+  linkUrl   String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action     String
+  entityType String
+  entityId   String
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([entityType, entityId])
+}
