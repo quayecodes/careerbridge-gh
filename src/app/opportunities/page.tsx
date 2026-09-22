@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { JobCard } from "@/components/jobs/JobCard";
 import { JobFilters } from "@/components/jobs/JobFilters";
-import { Loader2, Briefcase, Filter } from "lucide-react";
+import { Loader2, Briefcase, Filter, X } from "lucide-react";
 
 interface JobItem {
   id: string;
@@ -74,30 +75,41 @@ export default function OpportunitiesPage() {
     setSelectedWorkplace("ALL");
   };
 
+  const activeFilterCount =
+    (selectedType !== "ALL" ? 1 : 0) +
+    (selectedRegion !== "ALL" ? 1 : 0) +
+    (selectedWorkplace !== "ALL" ? 1 : 0) +
+    (searchQuery.trim() ? 1 : 0);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
 
       {/* Header Banner */}
-      <div className="bg-white border-b py-8">
+      <div className="bg-white border-b border-slate-200/80 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg w-fit mb-2">
+                <span>Verified Opportunities Portal</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 Explore Opportunities in Ghana
               </h1>
               <p className="text-sm text-slate-600 mt-1">
-                Verified internships, NSS postings, graduate trainee schemes, and scholarships.
+                Verified internships, NSS postings, graduate trainee schemes, and scholarships across all 16 regions.
               </p>
             </div>
 
             {/* Mobile Filter Toggle */}
             <button
               onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-              className="md:hidden flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold rounded-xl transition"
+              className="md:hidden flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-bold rounded-xl transition"
             >
-              <Filter className="h-4 w-4" />
-              <span>{mobileFilterOpen ? "Hide Filters" : "Filter Opportunities"}</span>
+              {mobileFilterOpen ? <X className="h-4 w-4" /> : <Filter className="h-4 w-4" />}
+              <span>
+                {mobileFilterOpen ? "Close Filters" : `Filter Opportunities ${activeFilterCount > 0 ? `(${activeFilterCount})` : ""}`}
+              </span>
             </button>
           </div>
         </div>
@@ -130,16 +142,25 @@ export default function OpportunitiesPage() {
           {/* Right Opportunity Grid */}
           <section className="lg:col-span-3">
             {/* Counter bar */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 bg-white px-4 py-3 rounded-xl border border-slate-200/80">
               <span className="text-xs font-semibold text-slate-600">
-                Showing <strong className="text-slate-900">{jobs.length}</strong> of{" "}
-                <strong className="text-slate-900">{total}</strong> verified listings
+                Showing <strong className="text-slate-900 font-bold">{jobs.length}</strong> of{" "}
+                <strong className="text-slate-900 font-bold">{total}</strong> verified listings
               </span>
+
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={handleReset}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 underline"
+                >
+                  Clear Filters ({activeFilterCount})
+                </button>
+              )}
             </div>
 
             {loading ? (
               <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-slate-200">
-                <Loader2 className="h-8 w-8 text-brand-600 animate-spin mb-3" />
+                <Loader2 className="h-8 w-8 text-emerald-600 animate-spin mb-3" />
                 <p className="text-sm font-medium text-slate-600">
                   Loading verified opportunities...
                 </p>
@@ -157,7 +178,7 @@ export default function OpportunitiesPage() {
                 </p>
                 <button
                   onClick={handleReset}
-                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-xl shadow-sm transition"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
                 >
                   Clear All Filters
                 </button>
@@ -172,6 +193,8 @@ export default function OpportunitiesPage() {
           </section>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
