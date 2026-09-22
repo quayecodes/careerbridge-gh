@@ -33,6 +33,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Context
+context.md
+
 # database
 dev.db
 dev.db-journal
